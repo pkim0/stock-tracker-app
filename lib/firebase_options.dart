@@ -85,4 +85,5 @@ class DefaultFirebaseOptions {
     storageBucket: 'stock-trader-app-1b51c.firebasestorage.app',
     measurementId: 'G-N95B70F5P0',
   );
+
 }

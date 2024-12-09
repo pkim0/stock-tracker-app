@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart'; // Firebase Core import
+import 'package:stock_app_project/screens/login_screen.dart'; // Login Screen
+import 'package:stock_app_project/screens/home_screen.dart'; // Home Screen
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(); // Initialize Firebase
   runApp(StockTrackerApp());
 }
 
@@ -11,39 +16,8 @@ class StockTrackerApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Stock Tracker App',
       theme: ThemeData(primarySwatch: Colors.blue),
-      home: CounterPage(),
-    );
-  }
-}
-
-class CounterPage extends StatefulWidget {
-  @override
-  _CounterPageState createState() => _CounterPageState();
-}
-
-class _CounterPageState extends State<CounterPage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('Counter Test Page')),
-      body: Center(
-        child: Text(
-          '$_counter',
-          style: TextStyle(fontSize: 24),
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        child: Icon(Icons.add),
-      ),
+      // Set LoginScreen as the starting screen
+      home: LoginScreen(),
     );
   }
 }
