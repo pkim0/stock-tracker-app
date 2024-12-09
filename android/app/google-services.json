@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "863986686458",
+    "project_id": "stock-trader-app-1b51c",
+    "storage_bucket": "stock-trader-app-1b51c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:863986686458:android:2a8a7bfad92900e627ac43",
+        "android_client_info": {
+          "package_name": "com.project.stock"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBe00MhTUU0e_KjNcFlcq-nl2_41rxP5-8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
