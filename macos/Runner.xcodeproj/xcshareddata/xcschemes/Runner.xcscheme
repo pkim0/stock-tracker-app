@@ -15,7 +15,11 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "33CC10EC2044A3C60003C045"
+<<<<<<< HEAD
                BuildableName = "stock_app_project.app"
+=======
+               BuildableName = "stock_tracker_app_.app"
+>>>>>>> c12aa32c5ebe88b3929479373f13f0081974eb06
                BlueprintName = "Runner"
                ReferencedContainer = "container:Runner.xcodeproj">
             </BuildableReference>
@@ -31,7 +35,11 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "33CC10EC2044A3C60003C045"
+<<<<<<< HEAD
             BuildableName = "stock_app_project.app"
+=======
+            BuildableName = "stock_tracker_app_.app"
+>>>>>>> c12aa32c5ebe88b3929479373f13f0081974eb06
             BlueprintName = "Runner"
             ReferencedContainer = "container:Runner.xcodeproj">
          </BuildableReference>
@@ -65,7 +73,11 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "33CC10EC2044A3C60003C045"
+<<<<<<< HEAD
             BuildableName = "stock_app_project.app"
+=======
+            BuildableName = "stock_tracker_app_.app"
+>>>>>>> c12aa32c5ebe88b3929479373f13f0081974eb06
             BlueprintName = "Runner"
             ReferencedContainer = "container:Runner.xcodeproj">
          </BuildableReference>
@@ -82,7 +94,11 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "33CC10EC2044A3C60003C045"
+<<<<<<< HEAD
             BuildableName = "stock_app_project.app"
+=======
+            BuildableName = "stock_tracker_app_.app"
+>>>>>>> c12aa32c5ebe88b3929479373f13f0081974eb06
             BlueprintName = "Runner"
             ReferencedContainer = "container:Runner.xcodeproj">
          </BuildableReference>
