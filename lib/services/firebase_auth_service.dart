@@ -10,9 +10,9 @@ class FirebaseAuthService {
         password: password,
       );
       return userCredential.user;
-    } catch (e) {
-      print('Sign Up Error: $e');
-      return null;
+    } on FirebaseAuthException catch (e) {
+      print('Sign Up Error: ${e.message}');
+      throw e;
     }
   }
 
@@ -23,9 +23,9 @@ class FirebaseAuthService {
         password: password,
       );
       return userCredential.user;
-    } catch (e) {
-      print('Log In Error: $e');
-      return null;
+    } on FirebaseAuthException catch (e) {
+      print('Log In Error: ${e.message}');
+      throw e;
     }
   }
 

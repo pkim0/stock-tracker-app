@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import '../services/firebase_auth_service.dart';
-import 'home_screen.dart'; // Navigate to the Home Screen after login
-import 'register_screen.dart'; // Import the new register screen
+import 'package:firebase_auth/firebase_auth.dart';
 
-class LoginScreen extends StatefulWidget {
+class RegisterScreen extends StatefulWidget {
   @override
-  _LoginScreenState createState() => _LoginScreenState();
+  _RegisterScreenState createState() => _RegisterScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final FirebaseAuthService _authService = FirebaseAuthService();
@@ -17,7 +16,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Login')),
+      appBar: AppBar(title: Text('Sign Up')),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -27,18 +26,17 @@ class _LoginScreenState extends State<LoginScreen> {
               SizedBox(height: 50),
               Center(
                 child: Image.asset(
-                  'assets/logo.png', // Ensure the logo exists in assets
+                  'assets/logo.png',
                   height: 120,
                   width: 120,
                 ),
               ),
               SizedBox(height: 20),
               Text(
-                'Stock Tracker App',
+                'Create Account',
                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
               SizedBox(height: 30),
-              // Email Input
               TextField(
                 controller: emailController,
                 decoration: InputDecoration(
@@ -47,7 +45,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               SizedBox(height: 20),
-              // Password Input
               TextField(
                 controller: passwordController,
                 decoration: InputDecoration(
@@ -57,23 +54,21 @@ class _LoginScreenState extends State<LoginScreen> {
                 obscureText: true,
               ),
               SizedBox(height: 20),
-              // Login Button
               ElevatedButton(
-                onPressed: _isLoading ? null : _handleLogin,
+                onPressed: _isLoading ? null : _handleSignUp,
                 child: _isLoading
                     ? CircularProgressIndicator(
                         valueColor: AlwaysStoppedAnimation(Colors.white),
                       )
-                    : Text('Log In'),
+                    : Text('Sign Up'),
                 style: ElevatedButton.styleFrom(
                   minimumSize: Size(double.infinity, 50),
                 ),
               ),
               SizedBox(height: 10),
-              // Sign Up Option
               TextButton(
-                onPressed: _handleSignUp,
-                child: Text('Don\'t have an account? Sign Up'),
+                onPressed: () => Navigator.pop(context),
+                child: Text('Already have an account? Log In'),
               ),
             ],
           ),
@@ -82,37 +77,58 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // Login handler
-  void _handleLogin() async {
+  void _handleSignUp() async {
     setState(() {
       _isLoading = true;
     });
 
-    final email = emailController.text.trim();
-    final password = passwordController.text.trim();
-    final user = await _authService.logIn(email, password);
+    try {
+      final email = emailController.text.trim();
+      final password = passwordController.text.trim();
+      
+      if (email.isEmpty || password.isEmpty) {
+        throw FirebaseAuthException(
+          code: 'invalid-input',
+          message: 'Please enter both email and password',
+        );
+      }
 
-    setState(() {
-      _isLoading = false;
-    });
-
-    if (user != null) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => HomeScreen()),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Login failed. Please check your credentials.')),
-      );
+      await _authService.signUp(email, password);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Account created successfully!')),
+        );
+        Navigator.pop(context); // Return to login screen
+      }
+    } on FirebaseAuthException catch (e) {
+      String errorMessage = 'Sign-up failed';
+      
+      switch (e.code) {
+        case 'weak-password':
+          errorMessage = 'The password provided is too weak';
+          break;
+        case 'email-already-in-use':
+          errorMessage = 'An account already exists for this email';
+          break;
+        case 'invalid-email':
+          errorMessage = 'The email address is not valid';
+          break;
+        default:
+          errorMessage = e.message ?? 'An unknown error occurred';
+      }
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errorMessage)),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
-  }
-
-  // Sign-Up handler
-  void _handleSignUp() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => RegisterScreen()),
-    );
   }
 }

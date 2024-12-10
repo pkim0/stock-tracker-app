@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart'; // Firebase Core import
 import 'package:stock_app_project/screens/login_screen.dart'; // Login Screen
-import 'package:stock_app_project/screens/home_screen.dart'; // Home Screen
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
