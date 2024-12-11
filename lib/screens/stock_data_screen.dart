@@ -21,9 +21,7 @@ class _StockDataScreenState extends State<StockDataScreen> {
     'TSLA', 'NVDA', 'JPM', 'V', 'WMT',
     'PG', 'JNJ', 'UNH', 'HD', 'BAC',
     'DIS', 'NFLX', 'INTC', 'VZ', 'KO',
-    'PEP', 'CSCO', 'ADBE', 'CRM', 'CMCSA',
-    'NKE', 'MCD', 'PYPL', 'TMO', 'ACN',
-    'COST', 'ABT', 'DHR', 'XOM', 'CVX'
+    'PEP', 'CSCO', 'ADBE', 'CRM', 'CMCSA'
   ];
 
   Map<String, List<Candle>> _allStockCandles = {};
@@ -31,27 +29,45 @@ class _StockDataScreenState extends State<StockDataScreen> {
   @override
   void initState() {
     super.initState();
-    _loadStockData();
+    _loadAllStockData();
+  }
+
+  Future<void> _loadAllStockData() async {
+    setState(() => _isLoading = true);
+    try {
+      // Load initial stock data
+      await _loadStockData();
+      
+      // Load data for all other stocks
+      for (String symbol in _stockSymbols) {
+        if (symbol != _symbol) {  // Skip the already loaded stock
+          try {
+            final candles = await _stockService.getStockCandles(symbol, 'D', 0, 0);
+            setState(() {
+              _allStockCandles[symbol] = candles;
+            });
+          } catch (e) {
+            print('Error loading data for $symbol: $e');
+          }
+        }
+      }
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
 
   Future<void> _loadStockData() async {
-    setState(() => _isLoading = true);
     try {
-      final now = DateTime.now();
-      final to = now.millisecondsSinceEpoch ~/ 1000;
-      final from = now.subtract(Duration(days: 7)).millisecondsSinceEpoch ~/ 1000;
-
       final stock = await _stockService.getStockQuote(_symbol);
-      final candles = await _stockService.getStockCandles(_symbol, 'D', from, to);
+      final candles = await _stockService.getStockCandles(_symbol, 'D', 0, 0);
       
       setState(() {
         _stock = stock;
         _candleData = candles;
         _allStockCandles[_symbol] = candles;
-        _isLoading = false;
       });
     } catch (e) {
-      setState(() => _isLoading = false);
+      print('Error in _loadStockData: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error loading stock data: $e')),
       );
@@ -210,11 +226,14 @@ class _StockDataScreenState extends State<StockDataScreen> {
 
   Widget _buildPriceChart() {
     if (_candleData == null || _candleData!.isEmpty) {
+      print('No candle data available'); // Debug print
       return Container(
         height: 300,
         child: Center(child: Text('No chart data available')),
       );
     }
+
+    print('Building chart with ${_candleData!.length} candles'); // Debug print
 
     final minY = _candleData!.map((e) => e.low).reduce((a, b) => a < b ? a : b);
     final maxY = _candleData!.map((e) => e.high).reduce((a, b) => a > b ? a : b);
@@ -272,7 +291,7 @@ class _StockDataScreenState extends State<StockDataScreen> {
               sideTitles: SideTitles(
                 showTitles: true,
                 reservedSize: 22,
-                interval: 5,
+                interval: 1,
                 getTitlesWidget: (value, meta) {
                   if (value.toInt() >= _candleData!.length) return Text('');
                   final date = DateTime.fromMillisecondsSinceEpoch(
@@ -313,22 +332,6 @@ class _StockDataScreenState extends State<StockDataScreen> {
               ),
             ),
           ],
-          lineTouchData: LineTouchData(
-            touchTooltipData: LineTouchTooltipData(
-              tooltipBgColor: Colors.blueGrey,
-              getTooltipItems: (List<LineBarSpot> touchedBarSpots) {
-                return touchedBarSpots.map((barSpot) {
-                  final date = DateTime.fromMillisecondsSinceEpoch(
-                    (_candleData![barSpot.x.toInt()].timestamp * 1000).toInt()
-                  );
-                  return LineTooltipItem(
-                    '${date.month}/${date.day}\n\$${barSpot.y.toStringAsFixed(2)}',
-                    const TextStyle(color: Colors.white),
-                  );
-                }).toList();
-              },
-            ),
-          ),
         ),
       ),
     );
