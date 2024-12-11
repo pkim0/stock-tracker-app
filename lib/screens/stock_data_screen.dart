@@ -149,7 +149,7 @@ class _StockDataScreenState extends State<StockDataScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Stock Data'),
+        title: Text('StockWatch'),
         actions: [
           IconButton(
             icon: Icon(Icons.refresh),
@@ -244,11 +244,11 @@ class _StockDataScreenState extends State<StockDataScreen> {
       height: 300,
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.black.withOpacity(0.1),
             spreadRadius: 1,
             blurRadius: 5,
           ),

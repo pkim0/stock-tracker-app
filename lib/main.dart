@@ -13,9 +13,22 @@ class StockTrackerApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Stock Tracker App',
-      theme: ThemeData(primarySwatch: Colors.blue),
-      // Set LoginScreen as the starting screen
+      title: 'StockWatch',
+      theme: ThemeData.light().copyWith(
+        primaryColor: Colors.blue,
+        scaffoldBackgroundColor: Colors.white,
+        cardColor: Colors.white,
+      ),
+      darkTheme: ThemeData.dark().copyWith(
+        primaryColor: Colors.blue,
+        scaffoldBackgroundColor: const Color(0xFF121212),
+        cardColor: const Color(0xFF1E1E1E),
+        appBarTheme: AppBarTheme(
+          backgroundColor: const Color(0xFF1E1E1E),
+          elevation: 0,
+        ),
+      ),
+      themeMode: ThemeMode.dark,
       home: LoginScreen(),
     );
   }
