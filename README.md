@@ -1,4 +1,4 @@
-# Stock Tracker App Project
+# Stock Tracker App Project "StockWatch"
 
 
 Mobile Application Development
