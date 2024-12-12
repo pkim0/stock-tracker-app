@@ -4,38 +4,43 @@ class StockCard extends StatelessWidget {
   final String name;
   final String symbol;
   final double price;
+  final double percentChange;
 
-  StockCard({required this.name, required this.symbol, required this.price});
+  const StockCard({
+    required this.name,
+    required this.symbol,
+    required this.price,
+    required this.percentChange,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: ListTile(
+        title: Text(name),
+        subtitle: Text(symbol),
+        trailing: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Text(
-              name,
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 4),
-            Text(
-              symbol,
-              style: TextStyle(fontSize: 16, color: Colors.grey),
-            ),
-            SizedBox(height: 8),
-            Text(
               '\$${price.toStringAsFixed(2)}',
-              style: TextStyle(fontSize: 18, color: Colors.green),
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            Text(
+              '${percentChange >= 0 ? '+' : ''}${percentChange.toStringAsFixed(2)}%',
+              style: TextStyle(
+                color: percentChange >= 0 ? Colors.green : Colors.red,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ],
         ),
+        onTap: () {
+          // Navigate to stock details screen
+          Navigator.pushNamed(context, '/stock-data', arguments: symbol);
+        },
       ),
     );
   }

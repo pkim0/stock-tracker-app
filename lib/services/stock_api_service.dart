@@ -4,120 +4,71 @@ import '../models/stock.dart';
 import '../models/candle.dart';
 
 class StockApiService {
-  final String baseUrl = "https://finnhub.io/api/v1";
-  final String apiKey = "ctcvropr01qlc0uvo470ctcvropr01qlc0uvo47g";
-
-  /// Fetch real-time stock quote data for a given stock symbol.
-  Future<Map<String, dynamic>> fetchStockData(String symbol) async {
-    final url = Uri.parse('$baseUrl/quote?symbol=$symbol&token=$apiKey');
-
-    try {
-      final response = await http.get(url);
-
-      if (response.statusCode == 200) {
-        return json.decode(response.body); // Returns the JSON as a Map
-      } else {
-        throw Exception("Failed to load stock data. HTTP ${response.statusCode}");
-      }
-    } catch (e) {
-      throw Exception("Error fetching stock data: $e");
-    }
-  }
-
-  /// Fetch historical data for a stock symbol over the past 30 days.
-  Future<Map<String, dynamic>> fetchHistoricalData(String symbol) async {
-    final url = Uri.parse(
-        '$baseUrl/stock/candle?symbol=$symbol&resolution=D&count=30&token=$apiKey');
-
-    try {
-      final response = await http.get(url);
-
-      if (response.statusCode == 200) {
-        return json.decode(response.body); // Returns the JSON as a Map
-      } else {
-        throw Exception(
-            "Failed to load historical data. HTTP ${response.statusCode}");
-      }
-    } catch (e) {
-      throw Exception("Error fetching historical data: $e");
-    }
-  }
+  static const String _baseUrl = 'https://finnhub.io/api/v1';
+  static const String _apiKey = 'ctcvropr01qlc0uvo470ctcvropr01qlc0uvo47g';
 
   Future<Stock> getStockQuote(String symbol) async {
     try {
-      final quoteData = await fetchStockData(symbol);
-      final companyName = await _getCompanyName(symbol);
+      // Get quote data
+      final quoteResponse = await http.get(
+        Uri.parse('$_baseUrl/quote?symbol=$symbol&token=$_apiKey'),
+      );
       
+      // Get company profile for the name
+      final profileResponse = await http.get(
+        Uri.parse('$_baseUrl/stock/profile2?symbol=$symbol&token=$_apiKey'),
+      );
+
+      if (quoteResponse.statusCode != 200 || profileResponse.statusCode != 200) {
+        throw Exception('Failed to load stock data');
+      }
+
+      final quoteData = json.decode(quoteResponse.body);
+      final profileData = json.decode(profileResponse.body);
+
       return Stock(
         symbol: symbol,
-        name: companyName,
-        price: (quoteData['c'] ?? 0.0).toDouble(),
-        percentChange: (quoteData['dp'] ?? 0.0).toDouble(),
-        change: (quoteData['d'] ?? 0.0).toDouble(),
-        open: (quoteData['o'] ?? 0.0).toDouble(),
-        high: (quoteData['h'] ?? 0.0).toDouble(),
-        low: (quoteData['l'] ?? 0.0).toDouble(),
-        previousClose: (quoteData['pc'] ?? 0.0).toDouble(),
+        name: profileData['name'] ?? symbol,
+        price: quoteData['c']?.toDouble() ?? 0.0,
+        open: quoteData['o']?.toDouble() ?? 0.0,
+        high: quoteData['h']?.toDouble() ?? 0.0,
+        low: quoteData['l']?.toDouble() ?? 0.0,
+        previousClose: quoteData['pc']?.toDouble() ?? 0.0,
+        percentChange: quoteData['dp']?.toDouble() ?? 0.0,
       );
     } catch (e) {
-      throw Exception("Error getting stock quote: $e");
+      throw Exception('Error fetching stock data: $e');
     }
   }
 
-  Future<List<Candle>> getStockCandles(String symbol, String interval, int from, int to) async {
+  Future<List<Candle>> getStockCandles(String symbol, String resolution, int from, int to) async {
     try {
-      // Since we don't have access to candle data, let's use quote data to create a simple chart
-      final quoteData = await fetchStockData(symbol);
-      
-      // Create a list of simulated price points using the available data
-      final now = DateTime.now();
-      List<Candle> candles = [];
-      
-      // Use the current price and previous close to create two data points
-      final currentPrice = (quoteData['c'] ?? 0.0).toDouble();
-      final openPrice = (quoteData['o'] ?? 0.0).toDouble();
-      final highPrice = (quoteData['h'] ?? 0.0).toDouble();
-      final lowPrice = (quoteData['l'] ?? 0.0).toDouble();
-      final prevClose = (quoteData['pc'] ?? 0.0).toDouble();
+      // Instead of candle data, we'll use the quote endpoint which is available in free tier
+      final quoteResponse = await http.get(
+        Uri.parse('$_baseUrl/quote?symbol=$symbol&token=$_apiKey'),
+      );
 
-      // Create candles for the last few data points
-      candles.add(Candle(
-        timestamp: (now.subtract(Duration(days: 1)).millisecondsSinceEpoch ~/ 1000),
-        open: prevClose,
-        high: prevClose * 1.01,
-        low: prevClose * 0.99,
-        close: prevClose,
-        volume: 0,
-      ));
-
-      candles.add(Candle(
-        timestamp: now.millisecondsSinceEpoch ~/ 1000,
-        open: openPrice,
-        high: highPrice,
-        low: lowPrice,
-        close: currentPrice,
-        volume: 0,
-      ));
-
-      return candles;
-    } catch (e) {
-      print('Exception in getStockCandles: $e');
-      return [];
-    }
-  }
-
-  Future<String> _getCompanyName(String symbol) async {
-    try {
-      final url = Uri.parse('$baseUrl/stock/profile2?symbol=$symbol&token=$apiKey');
-      final response = await http.get(url);
-      
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        return data['name'] ?? symbol;
+      if (quoteResponse.statusCode == 200) {
+        final data = json.decode(quoteResponse.body);
+        // Create a single candle from the quote data
+        if (data['c'] != null) {
+          return [
+            Candle(
+              timestamp: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+              open: (data['o'] as num).toDouble(),
+              high: (data['h'] as num).toDouble(),
+              low: (data['l'] as num).toDouble(),
+              close: (data['c'] as num).toDouble(),
+              volume: 0, // Volume not available in quote endpoint
+            )
+          ];
+        }
       }
-      return symbol;
+      print('No quote data available for $symbol: ${quoteResponse.body}');
+      return [];
     } catch (e) {
-      return symbol;
+      print('Error fetching quote: $e');
+      return [];
     }
   }
 }

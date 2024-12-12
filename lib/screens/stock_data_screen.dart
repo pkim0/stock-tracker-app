@@ -3,6 +3,7 @@ import 'package:fl_chart/fl_chart.dart';
 import '../models/stock.dart';
 import '../models/candle.dart';
 import '../services/stock_api_service.dart';
+import 'dart:math' show min, max;
 
 class StockDataScreen extends StatefulWidget {
   @override
@@ -17,14 +18,20 @@ class _StockDataScreenState extends State<StockDataScreen> {
   String _symbol = 'AAPL'; // Default symbol
 
   final List<String> _stockSymbols = [
-    'AAPL', 'GOOGL', 'MSFT', 'AMZN', 'META',
-    'TSLA', 'NVDA', 'JPM', 'V', 'WMT',
-    'PG', 'JNJ', 'UNH', 'HD', 'BAC',
-    'DIS', 'NFLX', 'INTC', 'VZ', 'KO',
-    'PEP', 'CSCO', 'ADBE', 'CRM', 'CMCSA'
+    'AAPL',  // Apple
+    'AMZN',  // Amazon
+    'MSFT',  // Microsoft
+    'GOOGL', // Google
+    'META',  // Meta (Facebook)
+    'TSLA',  // Tesla
+    'NVDA',  // NVIDIA
+    'AMD',   // AMD
+    'NFLX',  // Netflix
+    'UBER'   // Uber
   ];
 
   Map<String, List<Candle>> _allStockCandles = {};
+  Map<String, Stock> _allStocks = {};
 
   @override
   void initState() {
@@ -35,20 +42,21 @@ class _StockDataScreenState extends State<StockDataScreen> {
   Future<void> _loadAllStockData() async {
     setState(() => _isLoading = true);
     try {
-      // Load initial stock data
-      await _loadStockData();
-      
-      // Load data for all other stocks
+      // Load data for all stocks
       for (String symbol in _stockSymbols) {
-        if (symbol != _symbol) {  // Skip the already loaded stock
-          try {
-            final candles = await _stockService.getStockCandles(symbol, 'D', 0, 0);
-            setState(() {
-              _allStockCandles[symbol] = candles;
-            });
-          } catch (e) {
-            print('Error loading data for $symbol: $e');
-          }
+        try {
+          final stock = await _stockService.getStockQuote(symbol);
+          final candles = await _stockService.getStockCandles(symbol, 'D', 0, 0);
+          setState(() {
+            _allStocks[symbol] = stock;
+            _allStockCandles[symbol] = candles;
+            if (symbol == _symbol) {
+              _stock = stock;
+              _candleData = candles;
+            }
+          });
+        } catch (e) {
+          print('Error loading data for $symbol: $e');
         }
       }
     } finally {
@@ -60,6 +68,9 @@ class _StockDataScreenState extends State<StockDataScreen> {
     try {
       final stock = await _stockService.getStockQuote(_symbol);
       final candles = await _stockService.getStockCandles(_symbol, 'D', 0, 0);
+      
+      print('Loaded ${candles.length} candles for $_symbol'); // Debug print
+      print('First candle: ${candles.firstOrNull}'); // Debug print
       
       setState(() {
         _stock = stock;
@@ -109,12 +120,15 @@ class _StockDataScreenState extends State<StockDataScreen> {
 
   // Modify the sidebar list item
   Widget _buildStockListItem(String symbol) {
+    final stock = _allStocks[symbol];
+    
     return InkWell(
       onTap: () {
         setState(() {
           _symbol = symbol;
+          _stock = _allStocks[symbol];
+          _candleData = _allStockCandles[symbol];
         });
-        _loadStockData();
       },
       child: Container(
         padding: EdgeInsets.symmetric(vertical: 12, horizontal: 8),
@@ -129,14 +143,35 @@ class _StockDataScreenState extends State<StockDataScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              symbol,
-              style: TextStyle(
-                fontWeight: _symbol == symbol 
-                    ? FontWeight.bold 
-                    : FontWeight.normal,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  symbol,
+                  style: TextStyle(
+                    fontWeight: _symbol == symbol 
+                        ? FontWeight.bold 
+                        : FontWeight.normal,
+                  ),
+                ),
+                if (stock != null) ...[
+                  Icon(
+                    stock.percentChange >= 0 ? Icons.arrow_upward : Icons.arrow_downward,
+                    color: stock.percentChange >= 0 ? Colors.green : Colors.red,
+                    size: 16,
+                  ),
+                ],
+              ],
             ),
+            if (stock != null) ...[
+              Text(
+                '${stock.percentChange >= 0 ? '+' : ''}${stock.percentChange.toStringAsFixed(2)}%',
+                style: TextStyle(
+                  color: stock.percentChange >= 0 ? Colors.green : Colors.red,
+                  fontSize: 12,
+                ),
+              ),
+            ],
             SizedBox(height: 4),
             _buildMiniChart(symbol),
           ],
@@ -225,47 +260,47 @@ class _StockDataScreenState extends State<StockDataScreen> {
   }
 
   Widget _buildPriceChart() {
-    if (_candleData == null || _candleData!.isEmpty) {
-      print('No candle data available'); // Debug print
+    print('Building chart with data: ${_candleData?.length} candles');
+    if (_candleData == null || _candleData!.isEmpty || _stock == null) {
       return Container(
         height: 300,
-        child: Center(child: Text('No chart data available')),
+        child: Center(child: Text('Loading chart data...')),
       );
     }
 
-    print('Building chart with ${_candleData!.length} candles'); // Debug print
-
-    final minY = _candleData!.map((e) => e.low).reduce((a, b) => a < b ? a : b);
-    final maxY = _candleData!.map((e) => e.high).reduce((a, b) => a > b ? a : b);
-    final priceChange = _candleData!.last.close - _candleData!.first.close;
+    // Create price movement data points
+    final currentPrice = _stock!.price;
+    final previousClose = _stock!.previousClose;
+    final priceChange = currentPrice - previousClose;
     final color = priceChange >= 0 ? Colors.green : Colors.red;
+
+    // Create a series of points to show price movement
+    final List<FlSpot> spots = [
+      FlSpot(0, previousClose), // Previous close
+      FlSpot(1, (previousClose + currentPrice) / 2), // Midpoint
+      FlSpot(2, currentPrice), // Current price
+    ];
+
+    final minY = min(previousClose, currentPrice) * 0.9995;
+    final maxY = max(previousClose, currentPrice) * 1.0005;
 
     return Container(
       height: 300,
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
+        color: Colors.black,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 5,
-          ),
-        ],
+        border: Border.all(color: Colors.grey.shade800),
       ),
       child: LineChart(
         LineChartData(
           gridData: FlGridData(
             show: true,
-            drawVerticalLine: true,
+            drawVerticalLine: false,
+            horizontalInterval: 0.5,
             getDrawingHorizontalLine: (value) => FlLine(
-              color: Colors.grey.withOpacity(0.1),
-              strokeWidth: 1,
-            ),
-            getDrawingVerticalLine: (value) => FlLine(
-              color: Colors.grey.withOpacity(0.1),
-              strokeWidth: 1,
+              color: Colors.grey.shade800,
+              strokeWidth: 0.5,
             ),
           ),
           titlesData: FlTitlesData(
@@ -276,11 +311,12 @@ class _StockDataScreenState extends State<StockDataScreen> {
               sideTitles: SideTitles(
                 showTitles: true,
                 reservedSize: 55,
+                interval: 0.5,
                 getTitlesWidget: (value, meta) {
                   return Text(
                     '\$${value.toStringAsFixed(2)}',
                     style: TextStyle(
-                      color: Colors.grey,
+                      color: Colors.grey.shade400,
                       fontSize: 12,
                     ),
                   );
@@ -293,39 +329,44 @@ class _StockDataScreenState extends State<StockDataScreen> {
                 reservedSize: 22,
                 interval: 1,
                 getTitlesWidget: (value, meta) {
-                  if (value.toInt() >= _candleData!.length) return Text('');
-                  final date = DateTime.fromMillisecondsSinceEpoch(
-                    (_candleData![value.toInt()].timestamp * 1000).toInt()
-                  );
-                  return Text(
-                    '${date.month}/${date.day}',
-                    style: TextStyle(
-                      color: Colors.grey,
-                      fontSize: 12,
-                    ),
-                  );
+                  final labels = ['Previous Close', '', 'Current'];
+                  if (value >= 0 && value < labels.length) {
+                    return Text(
+                      labels[value.toInt()],
+                      style: TextStyle(
+                        color: Colors.grey.shade400,
+                        fontSize: 12,
+                      ),
+                    );
+                  }
+                  return Text('');
                 },
               ),
             ),
           ),
           borderData: FlBorderData(show: false),
           minX: 0,
-          maxX: (_candleData!.length - 1).toDouble(),
-          minY: minY * 0.999,
-          maxY: maxY * 1.001,
+          maxX: 2,
+          minY: minY,
+          maxY: maxY,
           lineBarsData: [
             LineChartBarData(
-              spots: _candleData!.asMap().entries.map((entry) {
-                return FlSpot(
-                  entry.key.toDouble(),
-                  entry.value.close,
-                );
-              }).toList(),
+              spots: spots,
               isCurved: true,
               color: color,
               barWidth: 2,
               isStrokeCapRound: true,
-              dotData: FlDotData(show: false),
+              dotData: FlDotData(
+                show: true,
+                getDotPainter: (spot, percent, barData, index) {
+                  return FlDotCirclePainter(
+                    radius: 4,
+                    color: color,
+                    strokeWidth: 1,
+                    strokeColor: Colors.white,
+                  );
+                },
+              ),
               belowBarData: BarAreaData(
                 show: true,
                 color: color.withOpacity(0.1),
