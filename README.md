@@ -15,7 +15,7 @@ YouTube Presentation Link: https://youtu.be/G5lfqM0Z8NQ
 
 Username: user@example.com
 
-Password: Password
+Password (case sensitive): Password
 
 ## Signup page 
 
