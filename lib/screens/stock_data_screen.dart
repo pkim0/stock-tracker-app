@@ -27,7 +27,9 @@ class _StockDataScreenState extends State<StockDataScreen> {
     'NVDA',  // NVIDIA
     'AMD',   // AMD
     'NFLX',  // Netflix
-    'UBER'   // Uber
+    'UBER',   // Uber
+    'Ebay',  // Ebay
+    'BOFA',  // Bank of America 
   ];
 
   Map<String, List<Candle>> _allStockCandles = {};
