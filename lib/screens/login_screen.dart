@@ -82,7 +82,6 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // Login handler
   void _handleLogin() async {
     setState(() {
       _isLoading = true;
