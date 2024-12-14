@@ -17,6 +17,6 @@ Username: user@example.com
 
 Password: Password
 
-# Signup page 
+## Signup page 
 
 User can directly input their mail ID and password after clicking the signup without any additional pages and then click on signup then they will be redirected to login
