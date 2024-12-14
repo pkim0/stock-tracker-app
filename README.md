@@ -19,4 +19,4 @@ Password: Password
 
 # Signup page 
 
-user can directly imput their mail id and password after clicking the signup  whithout any additional pages and then click on signup then they will be redirected to login 
+User can directly input their mail ID and password after clicking the signup without any additional pages and then click on signup then they will be redirected to login
